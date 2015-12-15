@@ -9,6 +9,7 @@ from service.node.node import nodemod
 from service.log.operate import logmod
 from service.openstack.neutron import neutronmod
 from service.security.devices import devicemod
+from service.tasks.workissue import workissuelogmod
 
 
 app = Flask(__name__)
@@ -19,6 +20,7 @@ app.register_blueprint(monitormod)
 app.register_blueprint(logmod)
 app.register_blueprint(neutronmod)
 app.register_blueprint(devicemod)
+app.register_blueprint(workissuelogmod)
 TRUE_STRINGS = ('1', 't', 'true', 'on', 'y', 'yes')
 
 
