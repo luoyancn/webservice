@@ -123,7 +123,10 @@ def commonfun(func):
         except Exception as exc:
             raise BadRequest(description=exc.message)
         auth = login(user, project, password, region)
-        return func(auth, region, *args, **kwargs)
+        try:
+            return func(auth, region, *args, **kwargs)
+        except TypeError:
+            return func(*args, **kwargs)
     return wrap
 
 
