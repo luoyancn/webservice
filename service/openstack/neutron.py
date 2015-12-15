@@ -142,9 +142,9 @@ def vpn_resrc(auth, region, sub_res, tenant_id=None):
                              resp.status_code)
     except Exception as exc:
         if not tenant_id:
-            resp = firewall_default_data(sub_res, is_list=True)
+            resp = vpn_default_data(sub_res, is_list=True)
         else:
-            resp = firewall_default_data(sub_res, is_list=False)
+            resp = vpn_default_data(sub_res, is_list=False)
         return make_response(str(resp), 404)
 
 
