@@ -7,6 +7,7 @@ from keystoneclient import session as osc_session
 from keystoneclient.v3 import client
 from functools import wraps
 
+import log
 import config
 import request as httprequest
 import flask
@@ -101,6 +102,12 @@ def login(username, project_id, password, region):
 def commonfun(func):
     @wraps(func)
     def wrap(*args, **kwargs):
+        log.info('@' * 50)
+        log.info('The request headers are follows: %r ' % frequest.headers)
+        log.info('The request params are follows: %r' % frequest.args)
+        log.info('The request body is follows: %r' % frequest.data)
+        log.info('The request url is follows: %r' % frequest.url)
+        log.info('@' * 50)
         try:
             user_id = frequest.headers['user_id']
             password = frequest.headers['password']
@@ -258,7 +265,11 @@ def get_quotas(auth, region, project_id):
     resp = httprequest.httpclient(
         'GET', config.os_auth_url + '/v3/%s/quotas' % project_id,
         auth[0], kwargs=kwargs)
-    return make_response(json.dumps(resp.json()), resp.status_code)
+    resp_json = resp.json()
+    if resp.status_code < 300:
+        resp_json['quota'].update({'waf': 0, 'ips': 0, 'anti_virus': 0,
+                          'waf_used':0, 'ips_used': 0, 'anti_virus': 0})
+    return make_response(json.dumps(resp_json), resp.status_code)
 
 
 @keystonemod.route('/v3/<project_id>/quotas', methods=['PUT'])
@@ -270,4 +281,8 @@ def update_quotas(auth, region, project_id):
     resp = httprequest.httpclient(
         'PUT', config.os_auth_url + '/v3/%s/quotas' % project_id,
         auth[0], kwargs=kwargs)
-    return make_response(json.dumps(resp.json()), resp.status_code)
+    resp_json = resp.json()
+    if resp.status_code < 300:
+        resp_json['quota'].update({'waf': 0, 'ips': 0, 'anti_virus': 0,
+                          'waf_used':0, 'ips_used': 0, 'anti_virus': 0})
+    return make_response(json.dumps(resp_json), resp.status_code)

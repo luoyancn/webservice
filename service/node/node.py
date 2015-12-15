@@ -54,6 +54,7 @@ def get_hosts(auth, region):
                     r['disks'] = disks
                 result['hosts'].append(r)
     except Exception as exc:
+        log.error(exc)
         return make_response(json.dumps(exc.message), 500)
     finally:
         conn.close()
@@ -83,6 +84,7 @@ def get_storages(auth, region):
                 tmp['ip_address'] = r.get('ip_address', '')
                 result['storage_device'].append(tmp)
     except Exception as exc:
+        log.error(exc)
         return make_response(json.dumps(exc.message), 500)
     finally:
         conn.close()
@@ -105,6 +107,7 @@ def get_networks(auth, region):
             for r in res:
                 result['network_device'].append(r)
     except Exception as exc:
+        log.error(exc)
         return make_response(json.dumps(exc.message), 500)
     finally:
         conn.close()
