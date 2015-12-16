@@ -125,6 +125,12 @@ def commonfun(func):
         log.info('The request remote is follows: %r' % frequest.remote_addr)
         log.info('The request values are follows: %r' % frequest.values)
         log.info('@' * 50)
+        
+        content_type = frequest.headers.get('Content-Type', None)
+        if content_type != 'application/json':
+            msg = 'Please make sure the request Content-Type'\
+                  ' equals application/json '
+            raise BadRequest(description=msg)
         try:
             user_id = frequest.headers['user_id']
             password = frequest.headers['password']
