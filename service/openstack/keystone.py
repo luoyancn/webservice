@@ -1,6 +1,7 @@
 import json
 import requests
 from flask import Blueprint
+from oslo_utils import uuidutils
 from keystoneclient.auth.identity.generic.password\
     import Password as auth_plugin
 from keystoneclient import session as osc_session
@@ -13,12 +14,13 @@ import request as httprequest
 import flask
 from flask import request as frequest
 from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import NotFound
 
 
 keystonemod = Blueprint('keystonemod', __name__)
 
 
-def _get_user_info(user_id):
+def _get_admin_context():
     params_no_version = {
         'username': config.admin_user,
         'project_name': config.admin_project,
@@ -36,8 +38,22 @@ def _get_user_info(user_id):
         session=request_session,
         verify=True)
     ks = client.Client(session=session)
+    return ks
+
+
+def _get_user_info(user_id):
+    ks = _get_admin_context()
     user = ks.users.get(user_id)
     return user.name, user.default_project_id
+
+
+def check_project(project_id):
+    ks = _get_admin_context()
+    try:
+        project = ks.projects.get(project_id)
+    except Exception:
+        msg = 'Project %s cannot be found' % project_id 
+        raise NotFound(description=msg)
 
 
 def login(username, project_id, password, region):
