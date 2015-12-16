@@ -1,7 +1,6 @@
 import json
 import requests
 from flask import Blueprint
-from oslo_utils import uuidutils
 from keystoneclient.auth.identity.generic.password\
     import Password as auth_plugin
 from keystoneclient import session as osc_session
@@ -50,9 +49,9 @@ def _get_user_info(user_id):
 def check_project(project_id):
     ks = _get_admin_context()
     try:
-        project = ks.projects.get(project_id)
+        ks.projects.get(project_id)
     except Exception:
-        msg = 'Project %s cannot be found' % project_id 
+        msg = 'Project %s cannot be found' % project_id
         raise NotFound(description=msg)
 
 
