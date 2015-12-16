@@ -22,7 +22,7 @@ def get_server(auth, region, project_id, server_id):
 @novamod.route('/v2.1/<project_id>/servers/detail', methods=['GET'])
 @commonfun
 def list_servers(auth, region, project_id):
-    kwargs = {'headers': {'X-Openstack-Region': region}} 
+    kwargs = {'headers': {'X-Openstack-Region': region}}
     kwargs['params'] = request.args
     resp = httprequest.httpclient(
         'GET', auth[1][0] + '/servers/detail',

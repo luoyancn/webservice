@@ -107,6 +107,8 @@ def commonfun(func):
         log.info('The request params are follows: %r' % frequest.args)
         log.info('The request body is follows: %r' % frequest.data)
         log.info('The request url is follows: %r' % frequest.url)
+        log.info('The request remote is follows: %r' % frequest.remote_addr)
+        log.info('The request values are follows: %r' % frequest.values)
         log.info('@' * 50)
         try:
             user_id = frequest.headers['user_id']
@@ -215,14 +217,16 @@ def create_user(auth, region):
     resp_json = resp.json()
     if resp.status_code < 300:
         assignment_resp = httprequest.httpclient(
-        'PUT', config.os_auth_url + '/v3/projects/%s/users/%s/roles/%s' % (
-            json_body['user']['default_project_id'],
-            resp_json['user']['id'], config.admin_role_id),
-        auth[0])
+            'PUT', config.os_auth_url +
+            '/v3/projects/%s/users/%s/roles/%s' % (
+                json_body['user']['default_project_id'],
+                resp_json['user']['id'], config.admin_role_id),
+            auth[0])
         if assignment_resp.status_code > 300:
             resp = httprequest.httpclient(
-            'DELETE', config.os_auth_url + '/v3/users/%s' % resp_json['user']['id'],
-            auth[0])
+                'DELETE', config.os_auth_url +
+                '/v3/users/%s' % resp_json['user']['id'],
+                auth[0])
             msg = 'Fail to create user'
             raise BadRequest(description=msg)
 
@@ -270,8 +274,9 @@ def get_quotas(auth, region, project_id):
         auth[0], kwargs=kwargs)
     resp_json = resp.json()
     if resp.status_code < 300:
-        resp_json['quota'].update({'waf': 0, 'ips': 0, 'anti_virus': 0,
-                          'waf_used':0, 'ips_used': 0, 'anti_virus': 0})
+        resp_json['quota'].update(
+            {'waf': 0, 'ips': 0, 'anti_virus': 0,
+             'waf_used': 0, 'ips_used': 0, 'anti_virus': 0})
     return make_response(json.dumps(resp_json), resp.status_code)
 
 
@@ -286,6 +291,7 @@ def update_quotas(auth, region, project_id):
         auth[0], kwargs=kwargs)
     resp_json = resp.json()
     if resp.status_code < 300:
-        resp_json['quota'].update({'waf': 0, 'ips': 0, 'anti_virus': 0,
-                          'waf_used':0, 'ips_used': 0, 'anti_virus': 0})
+        resp_json['quota'].update(
+            {'waf': 0, 'ips': 0, 'anti_virus': 0,
+             'waf_used': 0, 'ips_used': 0, 'anti_virus': 0})
     return make_response(json.dumps(resp_json), resp.status_code)

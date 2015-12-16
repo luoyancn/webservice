@@ -5,7 +5,6 @@ from flask import Blueprint
 from flask import request as frequest
 from werkzeug.exceptions import BadRequest
 
-import request as httprequest
 from service.openstack.keystone import commonfun
 from service.openstack.keystone import make_response
 import db
@@ -15,6 +14,7 @@ import log
 workissuelogmod = Blueprint('workissuelogmod', __name__)
 
 REQ_ITEM = ('tenant_id', 'user_id', 'title', 'content', 'status')
+
 
 def decode_datetime(datetime_struct):
     if not datetime_struct:
@@ -62,12 +62,13 @@ def get_workissue(auth, region, workissue_id):
 def create_workissue(auth, region):
     try:
         req_body = json.loads(frequest.data)['workissue']
-    except KeyError as err:
+    except KeyError:
         raise BadRequest(description='Invalid request body')
     except Exception as exc:
         log.error(exc)
     if not set(REQ_ITEM).issubset(set(req_body.keys())):
-        msg = 'You should provide requried all params in (%s)' % ','.join(REQ_ITEM)
+        msg = 'You should provide requried all params in (%s)' %\
+              ','.join(REQ_ITEM)
         raise BadRequest(description=msg)
     conn = db.getWorkIssueConn()
     try:
@@ -75,12 +76,15 @@ def create_workissue(auth, region):
         with conn.cursor() as cursor:
             sql = 'insert into workissue('\
                 ' `id`,`tenant_id`, `user_id`, `title`, `content`,'\
-                ' `status`, `user_email`, `user_tel`, `region`, `created_time`)'\
+                ' `status`, `user_email`, `user_tel`, `region`,'\
+                ' `created_time`)'\
                 ' VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, Now())'
             cursor.execute(sql, (uuid_str, req_body['tenant_id'],
                                  req_body['user_id'],
-                                 req_body['title'], req_body['content'],
-                                 req_body['status'], req_body.get('user_email', ''),
+                                 req_body['title'],
+                                 req_body['content'],
+                                 req_body['status'],
+                                 req_body.get('user_email', ''),
                                  req_body.get('user_tel', ''), region))
             conn.commit()
         result = {'workissue': {'id': uuid_str}}

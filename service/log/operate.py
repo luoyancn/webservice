@@ -1,7 +1,6 @@
 import json
 from flask import Blueprint
 
-import request as httprequest
 from service.openstack.keystone import commonfun
 from service.openstack.keystone import make_response
 
@@ -25,5 +24,5 @@ def get_logs(auth, region):
             'operator_ip': '127.0.0.1',
             'operate_result': 'success'}
 
-    body = {'operation_logs':[_log]}
+    body = {'operation_logs': [_log]}
     return make_response(json.dumps(body), 200)

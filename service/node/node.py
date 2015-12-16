@@ -1,7 +1,6 @@
 import json
 from flask import Blueprint
 
-import request as httprequest
 from service.openstack.keystone import commonfun
 from service.openstack.keystone import make_response
 import db
@@ -18,9 +17,9 @@ def get_hosts(auth, region):
     host_sql = 'SELECT t1.id, t1.os_name,t1.hostname,'\
                ' t1.description, t1.ip_address, t1.hypervisor,'\
                ' t1.model, t1.vendor, t1.cpu_count, t1.cpu_model,'\
-	       ' t1.cpu_frequence, t1.cpu_socket, t1.cpu_core,'\
+               ' t1.cpu_frequence, t1.cpu_socket, t1.cpu_core,'\
                ' t1.memory_size '\
-	       ' FROM Host t1'\
+               ' FROM Host t1'\
                ' WHERE t1.regionname=%s'
 
     tmp_disk_sql = 'SELECT t1.name,'\

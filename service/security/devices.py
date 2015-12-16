@@ -1,7 +1,6 @@
 import json
 from flask import Blueprint
 
-import request as httprequest
 from service.openstack.keystone import commonfun
 from service.openstack.keystone import make_response
 
@@ -28,9 +27,9 @@ def list_wafs(auth, region):
         'site_ip': '172.24.4.228',
         'port': 8080,
         'web_page_path': '/ss/dd.xhtml',
-        'exclude_process': '123' }
+        'exclude_process': '123'}
 
-    body = {'waf':[_wafs, _wafs_plus]}
+    body = {'waf': [_wafs, _wafs_plus]}
     return make_response(json.dumps(body), 200)
 
 
@@ -46,7 +45,7 @@ def get_waf(auth, region, wafs_id):
         'port': 8080,
         'id': '2f245a7b-796b-4f26-9cf9-9e82d248fda7'}
 
-    body = {'waf':_wafs}
+    body = {'waf': _wafs}
     return make_response(json.dumps(body), 200)
 
 
@@ -60,7 +59,6 @@ def list_ips(auth, region):
         'protected_object': ['os', 'device', 'software', 'database'],
         'id': '2f245a7b-796b-4f26-9cf9-9e82d248fda7',
     }
-
 
     body = {'ips': [ips]}
     return make_response(json.dumps(body), 200)
@@ -76,7 +74,6 @@ def get_ips(auth, region, ips_id):
         'protected_object': ['os', 'device', 'software', 'database'],
         'id': '2f245a7b-796b-4f26-9cf9-9e82d248fda7',
     }
-
 
     body = {'ips': ips}
     return make_response(json.dumps(body), 200)

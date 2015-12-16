@@ -2,7 +2,6 @@ import json
 from flask import Blueprint
 
 import log
-import config
 import request as httprequest
 from keystone import commonfun, make_response
 
@@ -91,7 +90,7 @@ def loadbalance_resrc(auth, region, sub_res, tenant_id=None):
         resp = httprequest.httpclient(
             'GET', res_url, auth[0])
         log.info('RESP:' + str(resp.json()))
-    except Exception as exc:
+    except Exception:
         resp = {'code': 404, 'message': 'RESOURCE NOT FOUND'}
         return make_response(str(resp), 404)
     return make_response(json.dumps(resp.json()),
@@ -115,7 +114,7 @@ def firewall_resrc(auth, region, sub_res, tenant_id=None):
         log.info('RESP:' + str(resp.json()))
         return make_response(json.dumps(resp.json()),
                              resp.status_code)
-    except Exception as exc:
+    except Exception:
         if not tenant_id:
             resp = firewall_default_data(sub_res, is_list=True)
         else:
@@ -140,7 +139,7 @@ def vpn_resrc(auth, region, sub_res, tenant_id=None):
         log.info('RESP:' + str(resp.json()))
         return make_response(json.dumps(resp.json()),
                              resp.status_code)
-    except Exception as exc:
+    except Exception:
         if not tenant_id:
             resp = vpn_default_data(sub_res, is_list=True)
         else:

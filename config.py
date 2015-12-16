@@ -17,12 +17,17 @@ certificate_file = _config.get('DEFAULT', 'certificate_file')
 debug = _config.get('DEFAULT', 'debug')
 
 #Notification DB
-notification_db_config={}
-notification_db_config["db_host"]=_config.get('Notification_DB','db_host')
-notification_db_config["db_port"]=int(_config.get('Notification_DB','db_port'))
-notification_db_config["db_user"]=_config.get('Notification_DB','db_user')
-notification_db_config["db_pass"]=_config.get('Notification_DB','db_pass')
-notification_db_config["db_schema"]=_config.get('Notification_DB','db_schema')
+notification_db_config = {}
+notification_db_config['db_host'] = _config.get(
+    'Notification_DB', 'db_host')
+notification_db_config['db_port'] = int(
+    _config.get('Notification_DB', 'db_port'))
+notification_db_config['db_user'] = _config.get(
+    'Notification_DB', 'db_user')
+notification_db_config['db_pass'] = _config.get(
+    'Notification_DB', 'db_pass')
+notification_db_config['db_schema'] = _config.get(
+    'Notification_DB', 'db_schema')
 
 devices_db_host = _config.get('devices', 'db_host')
 devices_db_port = _config.get('devices', 'db_port')
