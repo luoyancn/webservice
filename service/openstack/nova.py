@@ -81,7 +81,6 @@ def list_snapshots(auth, region, project_id):
 @novamod.route('/v2/images', methods=['GET'])
 @commonfun
 def list_images(auth, region):
-    check_project(project_id)
     kwargs = {'headers': {'X-Openstack-Region': region}}
     resp = httprequest.httpclient(
         'GET', auth[4][0] + '/images',
