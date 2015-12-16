@@ -433,7 +433,6 @@ def get_device_warnings_list():
                 warning['created'] = str(result.get('created', ''))
                 warning['status'] = result.get('status', '')
                 warnings.append(warning)
-            cursor.close()
             if len(warnings) > 0:
                 warnings = sorted(warnings, key=lambda k: k['created'],
                                   reverse=(requestParam['desc'] == 'true'))
