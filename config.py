@@ -40,3 +40,5 @@ workissue_db_port = _config.get('workissue', 'workissue_db_port')
 workissue_db_user = _config.get('workissue', 'workissue_db_user')
 workissue_db_passwd = _config.get('workissue', 'workissue_db_passwd')
 workissue_db = _config.get('workissue', 'workissue_db_database')
+
+sso_login = _config.get('sso', 'sso_login')

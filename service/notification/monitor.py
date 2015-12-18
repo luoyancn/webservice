@@ -4,6 +4,7 @@ import config
 import log
 import pymysql
 import re
+import request as httprequest
 from service.openstack.keystone import commonfun
 from service.openstack.keystone import make_response
 from flask import request
@@ -12,7 +13,7 @@ monitormod = Blueprint('monitormod', __name__)
 
 def getNicsInfo(output):
     obj = {}
-    infos = output.split(', ')
+    infos = output.split(',')
     for info in infos:
         res = info.split('=', 1)
         if res[0] == 'name':
@@ -30,7 +31,7 @@ def getNicsInfo(output):
 
 def getDisksInfo(output):
     obj = {}
-    infos = output.split(', ')
+    infos = output.split(',')
     for info in infos:
         res = info.split('=', 1)
         if(res[0] == 'name'):
@@ -65,7 +66,7 @@ def getDBConn():
 @monitormod.route('/v1/server/<server_id>/monitor',
                   methods=['GET'])
 @commonfun
-def get_server_monitor(server_id):
+def get_server_monitor(auth, region, server_id):
     conn = getDBConn()
     try:
         with conn.cursor() as cursor:
@@ -76,11 +77,29 @@ def get_server_monitor(server_id):
                 server_monitor['server_id'] = server_id
                 server_monitor['cpu_usage'] = '-9999'
                 server_monitor['mem_usage'] = '-9999'
-                server_monitor['status'] = 'active'
+                server_monitor['status'] = ''
                 server_monitor['running_time'] = '-9999'
                 server_monitor['health_status'] = 'false'
                 server_monitor['nics'] = []
                 server_monitor['disks'] = []
+                try:
+                    kwargs = {'headers': {'X-Openstack-Region': region}}
+                    resp = httprequest.httpclient(
+                        'GET', auth[1][0] + '/servers/%s' % server_id,
+                        auth[0], kwargs=kwargs)
+                    if resp.status_code == 200:
+                        result = resp.json()
+                        vm_server = result.get('server')
+                        if vm_server != None:
+                            vm_status = vm_server.get('status', '').lower()
+                            if vm_status == 'active':
+                                server_monitor['status'] = 'active'
+                            elif vm_status == '':
+                                server_monitor['status'] = ''
+                            else:
+                                server_monitor['status'] = 'down'
+                except Exception as exc_inside:
+                    log.error(exc_inside)
                 for result in resultSet:
                     name = result.get('name', '').lower()
                     output = result.get('output', '').lower()

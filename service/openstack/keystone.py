@@ -316,3 +316,11 @@ def update_quotas(auth, region, project_id):
             {'waf': 0, 'ips': 0, 'anti_virus': 0,
              'waf_used': 0, 'ips_used': 0, 'anti_virus': 0})
     return make_response(json.dumps(resp_json), resp.status_code)
+
+
+@keystonemod.route('v1/basecloud/url', methods=['GET'])
+@commonfun
+def sso_login(auth, region):
+    url = config.sso_login + 'token=%s&region=%s' % (auth[0], region)
+    result = {'url': url}
+    return make_response(json.dumps(result), 200)
