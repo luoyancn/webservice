@@ -318,7 +318,7 @@ def update_quotas(auth, region, project_id):
     return make_response(json.dumps(resp_json), resp.status_code)
 
 
-@keystonemod.route('/v1/basecloud/url', methods=['GET'])
+@keystonemod.route('/icp/url', methods=['GET'])
 @commonfun
 def sso_login(auth, region):
     url = config.sso_login + '?token=%s&region=%s' % (auth[0], region)
