@@ -100,6 +100,6 @@ def list_snapshots(auth, region, project_id):
 def list_images(auth, region):
     kwargs = {'headers': {'X-Openstack-Region': region}}
     resp = httprequest.httpclient(
-        'GET', auth[4][0] + '/v1/images',
+        'GET', auth[4][0] + '/v1/images/detail',
         auth[0], kwargs=kwargs)
     return make_response(json.dumps(resp.json()), resp.status_code)
