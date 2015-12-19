@@ -310,12 +310,10 @@ def update_quotas(auth, region, project_id):
     resp = httprequest.httpclient(
         'PUT', config.os_auth_url + '/v3/%s/quotas' % project_id,
         auth[0], kwargs=kwargs)
-    resp_json = resp.json()
-    if resp.status_code < 300:
-        resp_json['quota'].update(
-            {'waf': 0, 'ips': 0, 'anti_virus': 0,
-             'waf_used': 0, 'ips_used': 0, 'anti_virus': 0})
-    return make_response(json.dumps(resp_json), resp.status_code)
+    if resp.status_code == 204:
+        return make_response('', resp.status_code)
+    else:
+        return make_response(json.dumps(resp.json()), resp.status_code)
 
 
 @keystonemod.route('/icp/url', methods=['GET'])
