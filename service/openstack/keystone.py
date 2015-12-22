@@ -127,7 +127,7 @@ def commonfun(func):
         log.info('@' * 50)
         
         content_type = frequest.headers.get('Content-Type', None)
-        if 'application/json' in content_type:
+        if 'application/json' not in content_type:
             msg = 'Please make sure the request Content-Type '\
                   'is application/json'
             raise BadRequest(description=msg)
