@@ -127,16 +127,16 @@ def commonfun(func):
         log.info('@' * 50)
         
         content_type = frequest.headers.get('Content-Type', None)
-        if content_type != 'application/json':
-            msg = 'Please make sure the request Content-Type'\
-                  ' equals application/json '
+        if 'application/json' not in content_type:
+            msg = 'Please make sure the request Content-Type '\
+                  'is application/json'
             raise BadRequest(description=msg)
         try:
-            user_id = frequest.headers['user_id']
+            user_id = frequest.headers['userid']
             password = frequest.headers['password']
             region = frequest.headers['region']
         except KeyError:
-            msg = 'user_id, password and region must be provided'
+            msg = 'userid, password and region must be provided'
             raise BadRequest(description=msg)
         try:
             user, project = _get_user_info(user_id)
