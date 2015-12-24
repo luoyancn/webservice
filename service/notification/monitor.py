@@ -425,7 +425,7 @@ def get_device_warnings(warn_id):
 
 @monitormod.route('/v1/device/warnings', methods=['GET'])
 @commonfun
-def get_device_warnings_list():
+def get_device_warnings_list(auth, region):
     requestParam = {}
     requestParam['order_by'] = request.args.get('order_by', 'created_time')
     requestParam['desc'] = request.args.get('desc', 'false')
@@ -435,7 +435,8 @@ def get_device_warnings_list():
     try:
         with conn.cursor() as cursor:
             cursor.callproc('sp_get_device_warnings',
-                            (requestParam['start_time'],
+                            (region,
+                             requestParam['start_time'],
                              requestParam['end_time']))
             resultSet = cursor.fetchall()
             warnings = []
@@ -465,7 +466,7 @@ def get_device_warnings_list():
 
 @monitormod.route('/v1/server/warnings', methods=['GET'])
 @commonfun
-def get_server_warnings_list():
+def get_server_warnings_list(auth, region):
     requestParam = {}
     requestParam['order_by'] = request.args.get('order_by', 'created_time')
     requestParam['desc'] = request.args.get('desc', 'false')
@@ -479,7 +480,8 @@ def get_server_warnings_list():
     try:
         with conn.cursor() as cursor:
             cursor.callproc('sp_get_server_warnings',
-                            (requestParam['user_id'],
+                            (region,
+                             requestParam['user_id'],
                              requestParam['tenant_id'],
                              requestParam['start_time'],
                              requestParam['end_time']))
