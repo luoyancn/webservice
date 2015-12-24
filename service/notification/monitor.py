@@ -264,7 +264,7 @@ def get_network_device_monitor(network_device_id):
                             is_multi_mem = True
                             chassis_list = output.split(' chassis')
                             for chassis in chassis_list:
-                                mem_list = chassis.split('=', 1)[1].split(', ')
+                                mem_list = chassis.split('=', 1)[1].split(',')
                                 for mem in mem_list:
                                     if mem == '':
                                         continue
