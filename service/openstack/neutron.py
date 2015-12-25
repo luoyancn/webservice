@@ -119,7 +119,7 @@ def firewall_resrc(auth, region, sub_res, tenant_id=None):
             resp = firewall_default_data(sub_res, is_list=True)
         else:
             resp = firewall_default_data(sub_res, is_list=False)
-        return make_response(str(resp), 404)
+        return make_response(str(resp), 200)
 
 
 @neutronmod.route('/v2.0/vpn/<sub_res>', methods=['GET'])
@@ -144,7 +144,7 @@ def vpn_resrc(auth, region, sub_res, tenant_id=None):
             resp = vpn_default_data(sub_res, is_list=True)
         else:
             resp = vpn_default_data(sub_res, is_list=False)
-        return make_response(str(resp), 404)
+        return make_response(str(resp), 200)
 
 
 def get_url(auth_list, resource_name,

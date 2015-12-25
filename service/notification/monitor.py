@@ -264,7 +264,7 @@ def get_network_device_monitor(network_device_id):
                             is_multi_mem = True
                             chassis_list = output.split(' chassis')
                             for chassis in chassis_list:
-                                mem_list = chassis.split('=', 1)[1].split(', ')
+                                mem_list = chassis.split('=', 1)[1].split(',')
                                 for mem in mem_list:
                                     if mem == '':
                                         continue
@@ -425,7 +425,7 @@ def get_device_warnings(warn_id):
 
 @monitormod.route('/v1/device/warnings', methods=['GET'])
 @commonfun
-def get_device_warnings_list():
+def get_device_warnings_list(auth, region):
     requestParam = {}
     requestParam['order_by'] = request.args.get('order_by', 'created_time')
     requestParam['desc'] = request.args.get('desc', 'false')
@@ -435,7 +435,8 @@ def get_device_warnings_list():
     try:
         with conn.cursor() as cursor:
             cursor.callproc('sp_get_device_warnings',
-                            (requestParam['start_time'],
+                            (region,
+                             requestParam['start_time'],
                              requestParam['end_time']))
             resultSet = cursor.fetchall()
             warnings = []
@@ -465,7 +466,7 @@ def get_device_warnings_list():
 
 @monitormod.route('/v1/server/warnings', methods=['GET'])
 @commonfun
-def get_server_warnings_list():
+def get_server_warnings_list(auth, region):
     requestParam = {}
     requestParam['order_by'] = request.args.get('order_by', 'created_time')
     requestParam['desc'] = request.args.get('desc', 'false')
@@ -479,7 +480,8 @@ def get_server_warnings_list():
     try:
         with conn.cursor() as cursor:
             cursor.callproc('sp_get_server_warnings',
-                            (requestParam['user_id'],
+                            (region,
+                             requestParam['user_id'],
                              requestParam['tenant_id'],
                              requestParam['start_time'],
                              requestParam['end_time']))
