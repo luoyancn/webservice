@@ -627,9 +627,29 @@ def get_storage_monitor(storage_id):
 
 @monitormod.route('/v1/port/<port_id>/monitor', methods=['GET'])
 @commonfun
-def get_port_monitor(port_id):
-    data = dict(port_id=port_id, ip_address='',
-                status='', mac_address='',
-                inbound_rate='', outbound_rate='',
-                health_status='')
-    return make_response(json.dumps({'port_monitor': data}), 200)
+def get_port_monitor(auth, region, port_id):
+    floating_url = auth[2][0] + '/floatingips/' + port_id
+    port_url = auth[2][0] + '/ports?device_id=' + port_id
+
+    floating_resp = httprequest.httpclient(
+            'GET', floating_url, auth[0])
+    port_resp = httprequest.httpclient(
+            'GET', port_url, auth[0])
+    port_data = json.loads(port_resp.content)
+    floating_data = json.loads(floating_resp.content)
+    if not floating_data.get('floatingip', None):
+        return make_response(json.dumps({'port_monitor': {}}),
+                             floating_resp.status_code)
+
+    resp = {}
+    port_data = port_data['ports'][0]
+    floating_data = floating_data['floatingip']
+    resp['ip_address'] = floating_data['floating_ip_address']
+    resp['status'] = floating_data['status'].lower()
+    resp['mac_address'] = port_data.get('mac_address', '')
+    resp['inbound_rate'] = 0
+    resp['outbound_rate'] = 0
+    resp['health_status'] = 'true'
+
+    return make_response(json.dumps({'port_monitor': resp}),
+                         floating_resp.status_code)
