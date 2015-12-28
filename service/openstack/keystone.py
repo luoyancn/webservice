@@ -6,6 +6,7 @@ from keystoneclient.auth.identity.generic.password\
 from keystoneclient import session as osc_session
 from keystoneclient.v3 import client
 from functools import wraps
+import keystoneauth1
 
 import log
 import config
@@ -70,12 +71,7 @@ def login(username, project_id, password, region):
         auth=auth,
         session=request_session,
         verify=True)
-    try:
-        catalog = auth.get_auth_ref(session)['catalog']
-    except keystoneauth1.exceptions.http.Unauthorized as exc:
-        raise exc
-    except Exception as base_exc:
-        raise base_exc
+    catalog = auth.get_auth_ref(session)['catalog']
     nova_catalog = [res for res in catalog
                     if res['type'] == 'compute'
                     and res['endpoints'][0]['region'] == region]
@@ -150,7 +146,13 @@ def commonfun(func):
             raise BadRequest(description=msg)
         except Exception as exc:
             raise BadRequest(description=exc.message)
-        auth = login(user, project, password, region)
+        try:
+            auth = login(user, project, password, region)
+        except keystoneauth1.exceptions.http.Unauthorized as exc:
+            return make_response(json.dumps(exc.message), 401)
+        except Exception as base_exc:
+            raise base_exc
+
         try:
             return func(auth, region, *args, **kwargs)
         except TypeError:
