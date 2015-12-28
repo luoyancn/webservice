@@ -9,10 +9,10 @@ neutronmod = Blueprint('neutronmod', __name__)
 
 
 @neutronmod.route('/v2.0/networks', methods=['GET'])
-@neutronmod.route('/v2.0/networks/<tenant_id>', methods=['GET'])
+@neutronmod.route('/v2.0/networks/<resource_id>', methods=['GET'])
 @commonfun
-def network_resrc(auth, region, tenant_id=None):
-    res_url = get_url(auth, 'networks', tenant_id)
+def network_resrc(auth, region, resource_id=None):
+    res_url = get_url(auth, 'networks', resource_id)
     resp = httprequest.httpclient(
         'GET', res_url, auth[0])
     log.info('RESP:' + str(resp.json()))
@@ -21,10 +21,10 @@ def network_resrc(auth, region, tenant_id=None):
 
 
 @neutronmod.route('/v2.0/subnets', methods=['GET'])
-@neutronmod.route('/v2.0/subnets/<tenant_id>', methods=['GET'])
+@neutronmod.route('/v2.0/subnets/<resource_id>', methods=['GET'])
 @commonfun
-def subnet_resrc(auth, region, tenant_id=None):
-    res_url = get_url(auth, 'subnets', tenant_id)
+def subnet_resrc(auth, region, resource_id=None):
+    res_url = get_url(auth, 'subnets', resource_id)
     resp = httprequest.httpclient(
         'GET', res_url, auth[0])
     log.info('RESP:' + str(resp.json()))
@@ -33,10 +33,10 @@ def subnet_resrc(auth, region, tenant_id=None):
 
 
 @neutronmod.route('/v2.0/ports', methods=['GET'])
-@neutronmod.route('/v2.0/ports/<tenant_id>', methods=['GET'])
+@neutronmod.route('/v2.0/ports/<resource_id>', methods=['GET'])
 @commonfun
-def port_resrc(auth, region, tenant_id=None):
-    res_url = get_url(auth, 'ports', tenant_id)
+def port_resrc(auth, region, resource_id=None):
+    res_url = get_url(auth, 'ports', resource_id)
     resp = httprequest.httpclient(
         'GET', res_url, auth[0])
     log.info('RESP:' + str(resp.json()))
@@ -45,10 +45,10 @@ def port_resrc(auth, region, tenant_id=None):
 
 
 @neutronmod.route('/v2.0/routers', methods=['GET'])
-@neutronmod.route('/v2.0/routers/<tenant_id>', methods=['GET'])
+@neutronmod.route('/v2.0/routers/<resource_id>', methods=['GET'])
 @commonfun
-def router_resrc(auth, region, tenant_id=None):
-    res_url = get_url(auth, 'routers', tenant_id)
+def router_resrc(auth, region, resource_id=None):
+    res_url = get_url(auth, 'routers', resource_id)
     resp = httprequest.httpclient(
         'GET', res_url, auth[0])
     log.info('RESP:' + str(resp.json()))
@@ -57,11 +57,11 @@ def router_resrc(auth, region, tenant_id=None):
 
 
 @neutronmod.route('/v2.0/security-groups', methods=['GET'])
-@neutronmod.route('/v2.0/security-groups/<tenant_id>',
+@neutronmod.route('/v2.0/security-groups/<resource_id>',
                   methods=['GET'])
 @commonfun
-def security_group_resrc(auth, region, tenant_id=None):
-    res_url = get_url(auth, 'security-groups', tenant_id)
+def security_group_resrc(auth, region, resource_id=None):
+    res_url = get_url(auth, 'security-groups', resource_id)
     resp = httprequest.httpclient(
         'GET', res_url, auth[0])
     log.info('RESP:' + str(resp.json()))
@@ -70,10 +70,10 @@ def security_group_resrc(auth, region, tenant_id=None):
 
 
 @neutronmod.route('/v2.0/floatingips', methods=['GET'])
-@neutronmod.route('/v2.0/floatingips/<tenant_id>', methods=['GET'])
+@neutronmod.route('/v2.0/floatingips/<resource_id>', methods=['GET'])
 @commonfun
-def floatingip_resrc(auth, region, tenant_id=None):
-    res_url = get_url(auth, 'floatingips', tenant_id)
+def floatingip_resrc(auth, region, resource_id=None):
+    res_url = get_url(auth, 'floatingips', resource_id)
     resp = httprequest.httpclient(
         'GET', res_url, auth[0])
     log.info('RESP:' + str(resp.json()))
@@ -82,10 +82,10 @@ def floatingip_resrc(auth, region, tenant_id=None):
 
 
 @neutronmod.route('/v2.0/lb/<sub_res>', methods=['GET'])
-@neutronmod.route('/v2.0/lb/<sub_res>/<tenant_id>', methods=['GET'])
+@neutronmod.route('/v2.0/lb/<sub_res>/<resource_id>', methods=['GET'])
 @commonfun
-def loadbalance_resrc(auth, region, sub_res, tenant_id=None):
-    res_url = get_url(auth, 'lb', sub_res, tenant_id)
+def loadbalance_resrc(auth, region, sub_res, resource_id=None):
+    res_url = get_url(auth, 'lb', sub_res, resource_id)
     try:
         resp = httprequest.httpclient(
             'GET', res_url, auth[0])
@@ -98,16 +98,16 @@ def loadbalance_resrc(auth, region, sub_res, tenant_id=None):
 
 
 @neutronmod.route('/v2.0/fw/<sub_res>', methods=['GET'])
-@neutronmod.route('/v2.0/fw/<sub_res>/<tenant_id>', methods=['GET'])
+@neutronmod.route('/v2.0/fw/<sub_res>/<resource_id>', methods=['GET'])
 @commonfun
-def firewall_resrc(auth, region, sub_res, tenant_id=None):
+def firewall_resrc(auth, region, sub_res, resource_id=None):
     sub_resources = ('firewall_policies',
                      'firewalls', 'firewall_rules')
     if sub_res not in sub_resources:
         resp = {'code': 404, 'message': 'RESOURCE NOT FOUND'}
         return make_response(str(resp), 404)
 
-    res_url = get_url(auth, 'fw', sub_res, tenant_id)
+    res_url = get_url(auth, 'fw', sub_res, resource_id)
     try:
         resp = httprequest.httpclient(
             'GET', res_url, auth[0])
@@ -115,7 +115,7 @@ def firewall_resrc(auth, region, sub_res, tenant_id=None):
         return make_response(json.dumps(resp.json()),
                              resp.status_code)
     except Exception:
-        if not tenant_id:
+        if not resource_id:
             resp = firewall_default_data(sub_res, is_list=True)
         else:
             resp = firewall_default_data(sub_res, is_list=False)
@@ -123,16 +123,16 @@ def firewall_resrc(auth, region, sub_res, tenant_id=None):
 
 
 @neutronmod.route('/v2.0/vpn/<sub_res>', methods=['GET'])
-@neutronmod.route('/v2.0/vpn/<sub_res>/<tenant_id>', methods=['GET'])
+@neutronmod.route('/v2.0/vpn/<sub_res>/<resource_id>', methods=['GET'])
 @commonfun
-def vpn_resrc(auth, region, sub_res, tenant_id=None):
+def vpn_resrc(auth, region, sub_res, resource_id=None):
     sub_resources = ('vpnservices', 'ipsecpolicies',
                      'ikepolicies', 'ipsec-site-connections')
     if sub_res not in sub_resources:
         resp = {'code': 404, 'message': 'RESOURCE NOT FOUND'}
         return make_response(str(resp), 404)
 
-    res_url = get_url(auth, 'vpn', sub_res, tenant_id)
+    res_url = get_url(auth, 'vpn', sub_res, resource_id)
     try:
         resp = httprequest.httpclient(
             'GET', res_url, auth[0])
@@ -140,7 +140,7 @@ def vpn_resrc(auth, region, sub_res, tenant_id=None):
         return make_response(json.dumps(resp.json()),
                              resp.status_code)
     except Exception:
-        if not tenant_id:
+        if not resource_id:
             resp = vpn_default_data(sub_res, is_list=True)
         else:
             resp = vpn_default_data(sub_res, is_list=False)
