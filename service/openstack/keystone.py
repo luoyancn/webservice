@@ -70,7 +70,12 @@ def login(username, project_id, password, region):
         auth=auth,
         session=request_session,
         verify=True)
-    catalog = auth.get_auth_ref(session)['catalog']
+    try:
+        catalog = auth.get_auth_ref(session)['catalog']
+    except keystoneauth1.exceptions.http.Unauthorized as exc:
+        raise exc
+    except Exception as base_exc:
+        raise base_exc
     nova_catalog = [res for res in catalog
                     if res['type'] == 'compute'
                     and res['endpoints'][0]['region'] == region]
