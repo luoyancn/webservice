@@ -136,8 +136,9 @@ def commonfun(func):
             user_id = frequest.headers['userid']
             password = frequest.headers['password']
             region = frequest.headers['region']
+            username = frequest.headers['username']
         except KeyError:
-            msg = 'userid, password and region must be provided'
+            msg = 'userid, username, password and region must be provided'
             raise BadRequest(description=msg)
         try:
             user, project = _get_user_info(user_id)
@@ -147,7 +148,11 @@ def commonfun(func):
         except Exception as exc:
             raise BadRequest(description=exc.message)
         try:
-            auth = login(user, project, password, region)
+            if username == config.shadow_user_name:
+                auth = login(config.admin_user, config.admin_project_id,
+                             config.admin_passwd, region)
+            else:
+                auth = login(user, project, password, region)
         except keystoneauth1.exceptions.http.Unauthorized as exc:
             return make_response(json.dumps(exc.message), 401)
         except Exception as base_exc:
@@ -248,7 +253,7 @@ def create_user(auth, region):
             'PUT', config.os_auth_url +
             '/v3/projects/%s/users/%s/roles/%s' % (
                 json_body['user']['default_project_id'],
-                resp_json['user']['id'], config.admin_role_id),
+                resp_json['user']['id'], config.member_role_id),
             auth[0])
         if assignment_resp.status_code > 300:
             resp = httprequest.httpclient(
