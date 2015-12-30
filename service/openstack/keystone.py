@@ -15,6 +15,7 @@ import flask
 from flask import request as frequest
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import Forbidden
 
 
 keystonemod = Blueprint('keystonemod', __name__)
@@ -136,18 +137,16 @@ def commonfun(func):
             user_id = frequest.headers['userid']
             password = frequest.headers['password']
             region = frequest.headers['region']
+            username = frequest.headers['username']
         except KeyError:
-            msg = 'userid, password and region must be provided'
+            msg = 'userid, username, password and region must be provided'
             raise BadRequest(description=msg)
+        if username != config.shadow_user_name:
+            msg = 'The user %s was not authorized to perform the requested action' % username
+            raise Forbidden(description=msg)
         try:
-            user, project = _get_user_info(user_id)
-        except AttributeError:
-            msg = 'Invalid user %s: missing default_project_id' % user_id
-            raise BadRequest(description=msg)
-        except Exception as exc:
-            raise BadRequest(description=exc.message)
-        try:
-            auth = login(user, project, password, region)
+            auth = login('admin', config.admin_project_id,
+                         config.admin_passwd, region)
         except keystoneauth1.exceptions.http.Unauthorized as exc:
             return make_response(json.dumps(exc.message), 401)
         except Exception as base_exc:
@@ -248,7 +247,7 @@ def create_user(auth, region):
             'PUT', config.os_auth_url +
             '/v3/projects/%s/users/%s/roles/%s' % (
                 json_body['user']['default_project_id'],
-                resp_json['user']['id'], config.admin_role_id),
+                resp_json['user']['id'], config.member_role_id),
             auth[0])
         if assignment_resp.status_code > 300:
             resp = httprequest.httpclient(
