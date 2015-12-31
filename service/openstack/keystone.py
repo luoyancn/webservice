@@ -308,8 +308,8 @@ def get_quotas(auth, region, project_id):
     resp_json = resp.json()
     if resp.status_code < 300:
         resp_json['quota'].update(
-            {'waf': 0, 'ips': 0, 'anti_virus': 0,
-             'waf_used': 0, 'ips_used': 0, 'anti_virus': 0})
+            {'wafs': 0, 'ips': 0, 'anti_virus': 0,
+             'wafs_used': 0, 'ips_used': 0, 'anti_virus': 0})
     return make_response(json.dumps(resp_json), resp.status_code)
 
 
