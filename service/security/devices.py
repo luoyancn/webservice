@@ -29,7 +29,7 @@ def list_wafs(auth, region):
         'web_page_path': '/ss/dd.xhtml',
         'exclude_process': '123'}
 
-    body = {'waf': [_wafs, _wafs_plus]}
+    body = {'wafs': [_wafs, _wafs_plus]}
     return make_response(json.dumps(body), 200)
 
 
@@ -45,7 +45,7 @@ def get_waf(auth, region, wafs_id):
         'port': 8080,
         'id': '2f245a7b-796b-4f26-9cf9-9e82d248fda7'}
 
-    body = {'waf': _wafs}
+    body = {'wafs': _wafs}
     return make_response(json.dumps(body), 200)
 
 
