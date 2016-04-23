@@ -122,11 +122,11 @@ def commonfun(func):
         log.info('The request headers are follows: %r ' % frequest.headers)
         log.info('The request params are follows: %r' % frequest.args)
         log.info('The request body is follows: %r' % frequest.data)
-        log.info('The request url is follows: %r' % frequest.url)
+        log.info('The request url is follows: %s %r' % (frequest.method, frequest.url))
         log.info('The request remote is follows: %r' % frequest.remote_addr)
         log.info('The request values are follows: %r' % frequest.values)
         log.info('@' * 50)
-        
+
         content_type = frequest.headers.get('Content-Type', None)
         if 'application/json' not in content_type:
             msg = 'Please make sure the request Content-Type '\
@@ -158,6 +158,16 @@ def commonfun(func):
         except Exception as base_exc:
             raise base_exc
 
+        security_api = ['/wafs', '/ips', '/virus', '/vpn', '/fw']
+        security_api.appen('/physical_devices')
+        for api in security_api:
+            if api in frequest.path:
+                return func(auth, region, project, *args, **kwargs)
+
+        try:
+            return func(auth, region, project, *args, **kwargs)
+        except TypeError as e:
+            log.info(e)
         try:
             return func(auth, region, *args, **kwargs)
         except TypeError:
@@ -195,22 +205,46 @@ def get_resources(auth, region):
 @keystonemod.route('/v3/projects', methods=['POST'])
 @commonfun
 def create_project(auth, region):
-    json_body = json.loads(frequest.data)
-    kwargs = {'json': json_body}
-    resp = httprequest.httpclient(
-        'POST', config.os_auth_url + '/v3/projects',
-        auth[0], kwargs=kwargs)
+    try:
+        json_body = json.loads(frequest.data)
+        if not json_body.get('project'):
+            msg = 'Bad request data in creating v3 project: %r' % frequest.data)
+            log.error(msg)
+            resp = {'code': 400, 'message': msg}
+            return make_response(json.dumps(resp), 400)
+        kwargs = {'json': json_body}
+        resp = httprequest.httpclient(
+            'POST', config.os_auth_url + '/v3/projects',
+            auth[0], kwargs=kwargs)
+    except Exception as e:
+        message = 'Failed to create project: %r' % e
+        log.error(message)
+        resp = {'code': 500, 'messeage': message}
+        return make_response(json.dumps(resp), 500)
+
     return make_response(json.dumps(resp.json()), resp.status_code)
 
 
 @keystonemod.route('/v3/projects/<project_id>', methods=['PATCH'])
 @commonfun
 def update_project(auth, region, project_id):
-    json_body = json.loads(frequest.data)
-    kwargs = {'json': json_body}
-    resp = httprequest.httpclient(
-        'PATCH', config.os_auth_url + '/v3/projects/%s' % project_id,
-        auth[0], kwargs=kwargs)
+    try:
+        json_body = json.loads(frequest.data)
+        if not json_body.get('project'):
+            msg = 'Bad request data in update v3 project: %r' % frequest.data)
+            log.error(msg)
+            resp = {'code': 400, 'message': msg}
+            return make_response(json.dumps(resp), 400)
+        kwargs = {'json': json_body}
+        resp = httprequest.httpclient(
+            'PATCH', config.os_auth_url + '/v3/projects/%s' % project_id,
+            auth[0], kwargs=kwargs)
+    except Exception as e:
+        message = 'Failed to update project: %r' % e
+        log.error(message)
+        resp = {'code': 500, 'messeage': message}
+        return make_response(json.dumps(resp), 500)
+
     return make_response(json.dumps(resp.json()), resp.status_code)
 
 
@@ -238,30 +272,40 @@ def get_project(auth, region, project_id):
 @keystonemod.route('/v3/users', methods=['POST'])
 @commonfun
 def create_user(auth, region):
-    json_body = json.loads(frequest.data)
-    if 'default_project_id' not in json_body['user']:
-        msg = 'default_project_id is needed when create user'
-        raise BadRequest(description=msg)
-
-    kwargs = {'json': json_body}
-    resp = httprequest.httpclient(
-        'POST', config.os_auth_url + '/v3/users',
-        auth[0], kwargs=kwargs)
-    resp_json = resp.json()
-    if resp.status_code < 300:
-        assignment_resp = httprequest.httpclient(
-            'PUT', config.os_auth_url +
-            '/v3/projects/%s/users/%s/roles/%s' % (
-                json_body['user']['default_project_id'],
-                resp_json['user']['id'], config.member_role_id),
-            auth[0])
-        if assignment_resp.status_code > 300:
-            resp = httprequest.httpclient(
-                'DELETE', config.os_auth_url +
-                '/v3/users/%s' % resp_json['user']['id'],
-                auth[0])
-            msg = 'Fail to create user'
+    try:
+        json_body = json.loads(frequest.data)
+        if not json_body.get('user'):
+            msg = 'Bad request data in creating v3 user: %r' % frequest.data)
+            log.error(msg)
+            resp = {'code': 400, 'message': msg}
+            return make_response(json.dumps(resp), 400)
+        if 'default_project_id' not in json_body['user']:
+            msg = 'default_project_id is needed when create user'
             raise BadRequest(description=msg)
+        kwargs = {'json': json_body}
+        resp = httprequest.httpclient(
+            'POST', config.os_auth_url + '/v3/users',
+            auth[0], kwargs=kwargs)
+        resp_json = resp.json()
+        if resp.status_code < 300:
+            assignment_resp = httprequest.httpclient(
+                'PUT', config.os_auth_url +
+                '/v3/projects/%s/users/%s/roles/%s' % (
+                    json_body['user']['default_project_id'],
+                    resp_json['user']['id'], config.member_role_id),
+                auth[0])
+            if assignment_resp.status_code > 300:
+                resp = httprequest.httpclient(
+                    'DELETE', config.os_auth_url +
+                    '/v3/users/%s' % resp_json['user']['id'],
+                    auth[0])
+                msg = 'Fail to create user'
+                raise BadRequest(description=msg)
+    except Exception as e:
+        message = 'Failed to create v3 user: %r' % e
+        log.error(message)
+        resp = {'code': 500, 'messeage': message}
+        return make_response(json.dumps(resp), 500)
 
     return make_response(json.dumps(resp_json), resp.status_code)
 
@@ -269,11 +313,23 @@ def create_user(auth, region):
 @keystonemod.route('/v3/users/<user_id>', methods=['PATCH'])
 @commonfun
 def update_user(auth, region, user_id):
-    json_body = json.loads(frequest.data)
-    kwargs = {'json': json_body}
-    resp = httprequest.httpclient(
-        'PATCH', config.os_auth_url + '/v3/users/%s' % user_id,
-        auth[0], kwargs=kwargs)
+    try:
+        json_body = json.loads(frequest.data)
+        if not json_body.get('user'):
+            msg = 'Wrong request data in update v3 user: %r' % frequest.data)
+            log.error(msg)
+            resp = {'code': 400, 'message': msg}
+            return make_response(json.dumps(resp), 400)
+        kwargs = {'json': json_body}
+        resp = httprequest.httpclient(
+            'PATCH', config.os_auth_url + '/v3/users/%s' % user_id,
+            auth[0], kwargs=kwargs)
+    except Exception as e:
+        message = 'Failed to update v3 user: %r' % e
+        log.error(message)
+        resp = {'code': 500, 'messeage': message}
+        return make_response(json.dumps(resp), 500)
+
     return make_response(json.dumps(resp.json()), resp.status_code)
 
 

@@ -230,8 +230,8 @@ def get_network_device_monitor(network_device_id):
             network_monitor = {}
             if len(resultSet) > 0:
                 network_monitor['network_device_id'] = network_device_id
-                network_monitor['cpu_usage'] = ''
-                network_monitor['ram_usage'] = ''
+                network_monitor['cpu_usage'] = 0
+                network_monitor['ram_usage'] = 0
                 network_monitor['power_status'] = ''
                 network_monitor['inbound_rate'] = ''
                 network_monitor['outbound_rate'] = ''
@@ -352,11 +352,11 @@ def get_warn_strategies(strategy_id):
 
 @monitormod.route('/v1/warn_strategies', methods=['GET'])
 @commonfun
-def get_warn_strategies_list():
+def get_warn_strategies_list(auth, region):
     conn = getDBConn()
     try:
         with conn.cursor() as cursor:
-            cursor.callproc('sp_get_warn_strategies')
+            cursor.callproc('sp_get_warn_strategies', (region, ))
             warn_strategys = []
             warn_id_dict = {}
             resultSet = cursor.fetchall()
@@ -380,11 +380,15 @@ def get_warn_strategies_list():
                 rule['field'] = result.get('field', '')
                 rule['comparison'] = result.get('comparison', '')
                 rule['threshold'] = result.get('threshold', '')
+		if result['strategy_id'] not in warn_id_dict.keys():
+                    continue
                 warn_id_dict[result['strategy_id']]['rules'].append(rule)
 
             cursor.nextset()
             resultSet = cursor.fetchall()
             for result in resultSet:
+	        if result['strategy_id'] not in warn_id_dict.keys():
+                    continue
                 warn_id_dict[result['strategy_id']]['servers'].append(
                     result['server_id'])
     except Exception as exc:
@@ -392,7 +396,7 @@ def get_warn_strategies_list():
         return make_response(json.dumps(exc.message), 500)
     finally:
         conn.close()
-    return make_response(json.dumps({'warn_strategys': warn_strategys}), 200)
+    return make_response(json.dumps({'warn_strategies': warn_strategys}), 200)
 
 
 @monitormod.route('/v1/device/warnings/<warn_id>', methods=['GET'])
@@ -637,19 +641,21 @@ def get_port_monitor(auth, region, port_id):
             'GET', port_url, auth[0])
     port_data = json.loads(port_resp.content)
     floating_data = json.loads(floating_resp.content)
-    if not floating_data.get('floatingip', None):
-        return make_response(json.dumps({'port_monitor': {}}),
+    if not floating_data.get('floatingip', '').get('id', None):
+        resp = {'code': 404, 'message': 'Port Not Found'}
+        return make_response(json.dumps(resp),
                              floating_resp.status_code)
 
     resp = {}
     port_data = port_data['ports'][0]
     floating_data = floating_data['floatingip']
+    resp['port_id'] = port_id
     resp['ip_address'] = floating_data['floating_ip_address']
     resp['status'] = floating_data['status'].lower()
     resp['mac_address'] = port_data.get('mac_address', '')
     resp['inbound_rate'] = 0
     resp['outbound_rate'] = 0
-    resp['health_status'] = 'true'
+    resp['health_status'] = True
 
     return make_response(json.dumps({'port_monitor': resp}),
                          floating_resp.status_code)

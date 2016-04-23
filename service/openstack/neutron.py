@@ -1,7 +1,9 @@
 import json
+import pymysql
 from flask import Blueprint
 
 import log
+import config
 import request as httprequest
 from keystone import commonfun, make_response
 
@@ -90,9 +92,10 @@ def loadbalance_resrc(auth, region, sub_res, resource_id=None):
         resp = httprequest.httpclient(
             'GET', res_url, auth[0])
         log.info('RESP:' + str(resp.json()))
-    except Exception:
+    except Exception as e:
+        log(e)
         resp = {'code': 404, 'message': 'RESOURCE NOT FOUND'}
-        return make_response(str(resp), 404)
+        return make_response(json.dumps(resp), 404)
     return make_response(json.dumps(resp.json()),
                          resp.status_code)
 
@@ -105,13 +108,15 @@ def firewall_resrc(auth, region, sub_res, resource_id=None):
                      'firewalls', 'firewall_rules')
     if sub_res not in sub_resources:
         resp = {'code': 404, 'message': 'RESOURCE NOT FOUND'}
-        return make_response(str(resp), 404)
+        return make_response(json.dumps(resp), 404)
 
     res_url = get_url(auth, 'fw', sub_res, resource_id)
     try:
         resp = httprequest.httpclient(
             'GET', res_url, auth[0])
         log.info('RESP:' + str(resp.json()))
+	if resp.status_code == 404:
+	    raise Exception('RESOURCE NOT FOUND')
         return make_response(json.dumps(resp.json()),
                              resp.status_code)
     except Exception:
@@ -119,32 +124,118 @@ def firewall_resrc(auth, region, sub_res, resource_id=None):
             resp = firewall_default_data(sub_res, is_list=True)
         else:
             resp = firewall_default_data(sub_res, is_list=False)
-        return make_response(str(resp), 200)
+        return make_response(json.dumps(resp), 200)
+
+
+VPN_DB_TABLE_DICT = {'ikepolicies': 'vpn_ikes',
+                     'ipsecpolicies': 'vpn_ipsecs',
+                     'vpnservices': 'vpn_services',
+                     'ipsec-site-connections': 'vpn_site_conns'}
 
 
 @neutronmod.route('/v2.0/vpn/<sub_res>', methods=['GET'])
+@commonfun
+def vpn_res_list(auth, region, project_id, sub_res):
+    vpn_resources = []
+    sub_resources = {'vpnservices': 'vpnservices',
+                     'ikepolicies': 'ikepolicies',
+                     'ipsecpolicies': 'ipsecpolicies',
+                     'ipsec-site-connections': 'ipsec_site_connections'}
+    if sub_res not in sub_resources.keys():
+        resp = {'code': 404, 'message': 'RESOURCE NOT FOUND'}
+        return make_response(json.dumps(resp), 404)
+
+    try:
+        conn = get_database_conn()
+        with conn.cursor() as cursor:
+            sql = 'select * from ' + VPN_DB_TABLE_DICT[sub_res] + \
+                ' where tenant_id=\'%s\'' % project_id
+            result_num = cursor.execute(sql)
+            for result in cursor:
+                if sub_res in ['ikepolicies', 'ipsecpolicies']:
+                    units = result.pop('lifetime_units')
+                    value = result.pop('lifetime_value')
+                    result['lifetime'] = {'units': units,
+                                          'value': value}
+                if sub_res == 'ipsec-site-connections':
+                    action = result.pop('dpd_action')
+                    interval = result.pop('dpd_interval')
+                    timeout = result.pop('dpd_timeout')
+                    result['dpd'] = {'action': action,
+                                     'interval': interval,
+                                     'timeout': timeout}
+                    result['peer_cidrs'] = result['peer_cidrs'].split(',')
+                vpn_resources.append(result)
+    except Exception as e:
+        message = 'Failed to get %s list: %r': % (sub_res, e)
+        log.error(message)
+        response = {'code': 500, 'message': message)}
+        return make_response(json.dumps(response), 500)
+    else:
+        body = {sub_resources[sub_res]: vpn_resources}
+        return make_response(json.dumps(body), 200)
+
+
 @neutronmod.route('/v2.0/vpn/<sub_res>/<resource_id>', methods=['GET'])
 @commonfun
-def vpn_resrc(auth, region, sub_res, resource_id=None):
-    sub_resources = ('vpnservices', 'ipsecpolicies',
-                     'ikepolicies', 'ipsec-site-connections')
-    if sub_res not in sub_resources:
+def vpn_res_get(auth, region, project, sub_res, resource_id):
+    vpn_resource = {}
+    sub_resources = {'vpnservices': 'vpnservice',
+                     'ikepolicies': 'ikepolicy',
+                     'ipsecpolicies': 'ipsecpolicy',
+                     'ipsec-site-connections': 'ipsec_site_connection'}
+    if sub_res not in sub_resources.keys():
         resp = {'code': 404, 'message': 'RESOURCE NOT FOUND'}
-        return make_response(str(resp), 404)
+        return make_response(json.dumps(resp), 404)
+    if not verify_id(resource_id):
+        message = 'Invalid %s id %s! Please check it.'\
+            % (sub_res, resource_id)
+        response = {'code': 401, 'message': message}
+        return make_response(json.dumps(message), 401)
 
-    res_url = get_url(auth, 'vpn', sub_res, resource_id)
     try:
-        resp = httprequest.httpclient(
-            'GET', res_url, auth[0])
-        log.info('RESP:' + str(resp.json()))
-        return make_response(json.dumps(resp.json()),
-                             resp.status_code)
-    except Exception:
-        if not resource_id:
-            resp = vpn_default_data(sub_res, is_list=True)
-        else:
-            resp = vpn_default_data(sub_res, is_list=False)
-        return make_response(str(resp), 200)
+        conn = get_database_conn()
+        with conn.cursor() as cursor:
+            sql = 'select * from ' + VPN_DB_TABLE_DICT[sub_res] + \
+                ' where id=\'%s\'' % resource_id
+            result_num = cursor.execute(sql)
+            if result_num == 1:
+                result = cursor.fetchone()
+                if sub_res in ['ikepolicies', 'ipsecpolicies']:
+                    units = result.pop('lifetime_units')
+                    value = result.pop('lifetime_value')
+                    result['lifetime'] = {'units': units,
+                                          'value': value}
+                if sub_res == 'ipsec-site-connections':
+                    action = result.pop('dpd_action')
+                    interval = result.pop('dpd_interval')
+                    timeout = result.pop('dpd_timeout')
+                    result['dpd'] = {'action': action,
+                                     'interval': interval,
+                                     'timeout': timeout}
+                    result['peer_cidrs'] = result['peer_cidrs'].split(',')
+                vpn_resource = result
+            elif result_num == 0:
+                message = 'Unable to find ' + sub_res + \
+                    ' with id ' + resource_id
+                log.debug(message)
+                response = {'code': 404, 'message': message}
+                return make_response(json.dumps(message), 200)
+            else:
+                message = 'Unknown error.'
+                log.error(message)
+                response = {'code': 500, 'message': message}
+                return make_response(json.dumps(message), 500)
+
+    except Exception as e:
+        message = 'Failed to get %s by id %s: %r:' \
+            % (sub_res, resource_id, e)
+        log.error(message)
+        response = {'code': 500, 'message': message)}
+        return make_response(json.dumps(response), 500)
+    else:
+        body = {sub_resources[sub_res]: vpn_resource}
+        return make_response(json.dumps(body), 200)
 
 
 def get_url(auth_list, resource_name,
@@ -160,50 +251,29 @@ def get_url(auth_list, resource_name,
     return res_url
 
 
-def vpn_default_data(sub_res, is_list=True):
-    data = {}
-    sub_resource = {'vpnservices': 'vpnservice',
-                    'ikepolicies': 'ikepolicy',
-                    'ipsecpolicies': 'ipsecpolicy',
-                    'ipsec-site-connections': 'ipsec_site_connection'}
-    sub_resources = {'vpnservices': 'vpnservices',
-                     'ikepolicies': 'ikepolicies',
-                     'ipsecpolicies': 'ipsecpolicies',
-                     'ipsec-site-connections': 'ipsec_site_connections'}
+def get_database_conn():
+    conn = pymysql.connect(
+        host=config.security_db_host,
+        port=int(config.security_db_port),
+        user=config.security_db_user,
+        passwd=config.security_db_passwd,
+        db=config.security_db,
+        charset='utf8',
+        cursorclass=pymysql.cursors.DictCursor)
+    return conn
 
-    data['vpnservices'] = dict(router_id='', status='',
-                               name='', admin_state_up='',
-                               subnet_id='', tenant_id='',
-                               id='', description='')
-    data['ikepolicies'] = dict(name='', tenant_id='', id='',
-                               auth_algorithm='', pfs='',
-                               encryption_algorithm='',
-                               phase1_negotiation_mode='',
-                               lifetime=dict(units='', value=''),
-                               ike_version='', description='')
-    data['ipsecpolicies'] = dict(name='', transform_protocol='',
-                                 auth_algorithm='', pfs='',
-                                 encapsulation_mode='', id='',
-                                 encryption_algorithm='',
-                                 tenant_id='', description='',
-                                 lifetime=dict(units='', value=''))
 
-    data['ipsec-site-connections'] = dict(status='', initiator='',
-                                          name='', admin_state_up='',
-                                          tenant_id='', auth_mode='',
-                                          peer_cidrs='', psk='', mtu='',
-                                          ikepolicy_id='', id='',
-                                          dpd=dict(action='', interval='',
-                                                   timeout=''),
-                                          route_mode='', ipsecpolicy_id='',
-                                          peer_address='', peer_id='',
-                                          description='', vpnservice_id='',
-                                          )
-
-    if is_list:
-        return {sub_resource[sub_res]: [data[sub_res]]}
+def verify_id(resource_id):
+    for char in resource_id:
+	if char <= 9 and char >= 0 or char == '-':
+            continue
+        elif char.lower() <= 'z' and char.lower() >= 'a':
+            continue
+        else:
+            break
     else:
-        return {sub_resources[sub_res]: data[sub_res]}
+        return True
+    return False
 
 
 def firewall_default_data(sub_res, is_list):
