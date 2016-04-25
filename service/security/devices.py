@@ -1,4 +1,7 @@
 import json
+import pymysql
+import log
+import config
 from flask import Blueprint
 
 from service.openstack.keystone import commonfun
@@ -7,143 +10,264 @@ from service.openstack.keystone import make_response
 
 devicemod = Blueprint('devicemod', __name__)
 
+TABLE_NAME_WAFS = 'wafs'
+TABLE_NAME_IPS = 'ips'
+TABLE_NAME_VIRUS = 'virus'
+TABLE_NAME_PHYSICAL_DEVICES = 'physical_devices'
+
+
+def get_database_conn():
+    conn = pymysql.connect(
+        host=config.security_db_host,
+        port=int(config.security_db_port),
+        user=config.security_db_user,
+        passwd=config.security_db_passwd,
+        db=config.security_db,
+        charset='utf8',
+        cursorclass=pymysql.cursors.DictCursor)
+    return conn
+
 
 @devicemod.route('/v1/wafs', methods=['GET'])
 @commonfun
-def list_wafs(auth, region):
-    _wafs = {
-        'service_type': 'TYPE_WAF',
-        'tenant_id': '4969c491a3c74ee4af974e6d800c62de',
-        'name': 'web security',
-        'site_domain': '10.0.0.3',
-        'site_ip': '172.24.4.228',
-        'port': 8080,
-        'id': '2f245a7b-796b-4f26-9cf9-9e82d248fda7'}
-    _wafs_plus = {
-        'service_type': 'TYPE_WAF_PLUS',
-        'tenant_id': '4969c491a3c74ee4af974e6d800c62de',
-        'name': 'web security',
-        'site_domain': '10.0.0.3',
-        'site_ip': '172.24.4.228',
-        'port': 8080,
-        'web_page_path': '/ss/dd.xhtml',
-        'exclude_process': '123'}
-
-    body = {'wafs': [_wafs, _wafs_plus]}
-    return make_response(json.dumps(body), 200)
+def list_wafs(auth, region, project_id):
+    wafs = []
+    try:
+        conn = get_database_conn()
+        with conn.cursor() as cursor:
+            sql = 'select * from ' + TABLE_NAME_WAFS + \
+                ' where tenant_id=\'' + project_id + '\''
+            result_num = cursor.execute(sql)
+            for result in cursor:
+                wafs.append(result)
+    except Exception as e:
+        log.error(e)
+        response = {'code': 500, 'message': str(e)}
+        return make_response(json.dumps(response), 500)
+    else:
+        body = {'wafs': wafs}
+        return make_response(json.dumps(body), 200)
 
 
 @devicemod.route('/v1/wafs/<wafs_id>', methods=['GET'])
 @commonfun
-def get_waf(auth, region, wafs_id):
-    _wafs = {
-        'service_type': 'TYPE_WAF',
-        'tenant_id': '4969c491a3c74ee4af974e6d800c62de',
-        'name': 'web security',
-        'site_domain': '10.0.0.3',
-        'site_ip': '172.24.4.228',
-        'port': 8080,
-        'id': '2f245a7b-796b-4f26-9cf9-9e82d248fda7'}
+def get_waf(auth, region, project_id, wafs_id):
+    wafs = {}
+    if not verify_id(wafs_id):
+        message = 'Invalid wafs id! Please check it.'
+        response = {'code': 400, 'message': message}
+        return make_response(json.dumps(response), 400)
 
-    body = {'wafs': _wafs}
-    return make_response(json.dumps(body), 200)
+    try:
+        conn = get_database_conn()
+        with conn.cursor() as cursor:
+            sql = 'select * from ' + TABLE_NAME_WAFS + \
+                ' where id=\'' + wafs_id + '\''
+            result_num = cursor.execute(sql)
+            if result_num == 1:
+                wafs = cursor.fetchone()
+            elif result_num == 0:
+                message = 'Unable to find ips with id ' + wafs_id
+                log.debug(message)
+                response = {'code': 404, 'message': message}
+                return make_response(json.dumps(response), 404)
+            else:
+                message = 'Unknown error.'
+                log.error(message)
+                response = {'code': 500, 'message': message}
+                return make_response(json.dumps(response), 500)
+
+    except Exception as e:
+        log.error(e)
+        response = {'code': 500, 'message': str(e)}
+        return make_response(json.dumps(response), 500)
+    else:
+        body = {'wafs': wafs}
+        return make_response(json.dumps(body), 200)
 
 
 @devicemod.route('/v1/ips', methods=['GET'])
 @commonfun
-def list_ips(auth, region):
-    ips = {
-        'tenant_id': '4969c491a3c74ee4af974e6d8dsfdsee',
-        'name': 'web security',
-        'description': 'xxxx',
-        'protected_object': ['os', 'device', 'software', 'database'],
-        'id': '2f245a7b-796b-4f26-9cf9-9e82d248fda7',
-    }
-
-    body = {'ips': [ips]}
-    return make_response(json.dumps(body), 200)
+def list_ips(auth, region, project_id):
+    ips = []
+    try:
+        conn = get_database_conn()
+        with conn.cursor() as cursor:
+            sql = 'select * from ' + TABLE_NAME_IPS + \
+                ' where tenant_id=\'' + project_id + '\''
+            result_num = cursor.execute(sql)
+            for result in cursor:
+                ips.append(result)
+    except Exception as e:
+        log.error(e)
+        response = {'code': 500, 'message': str(e)}
+        return make_response(json.dumps(response), 500)
+    else:
+        body = {'ips': ips}
+        return make_response(json.dumps(body), 200)
 
 
 @devicemod.route('/v1/ips/<ips_id>', methods=['GET'])
 @commonfun
-def get_ips(auth, region, ips_id):
-    ips = {
-        'tenant_id': '4969c491a3c74ee4af974e6d8dsfdsee',
-        'name': 'web security',
-        'description': 'xxxx',
-        'protected_object': ['os', 'device', 'software', 'database'],
-        'id': '2f245a7b-796b-4f26-9cf9-9e82d248fda7',
-    }
+def get_ips(auth, region, project_id, ips_id):
+    ips = {}
+    if not verify_id(ips_id):
+        message = 'Invalid ips id! Please check it.'
+        response = {'code': 400, 'message': message}
+        return make_response(json.dumps(response), 400)
 
-    body = {'ips': ips}
-    return make_response(json.dumps(body), 200)
+    try:
+        conn = get_database_conn()
+        with conn.cursor() as cursor:
+            sql = 'select * from ' + TABLE_NAME_IPS + \
+                ' where id=\'' + ips_id + '\''
+            result_num = cursor.execute(sql)
+            if result_num == 1:
+                ips = cursor.fetchone()
+            elif result_num == 0:
+                message = 'Unable to find ips with id ' + ips_id
+                log.debug(message)
+                response = {'code': 404, 'message': message}
+                return make_response(json.dumps(response), 404)
+            else:
+                message = 'Unknown error.'
+                log.error(message)
+                response = {'code': 500, 'message': message}
+                return make_response(json.dumps(response), 500)
+
+    except Exception as e:
+        log.error(e)
+        response = {'code': 500, 'message': str(e)}
+        return make_response(json.dumps(response), 500)
+    else:
+        body = {'ips': ips}
+        return make_response(json.dumps(body), 200)
 
 
 @devicemod.route('/v1/virus', methods=['GET'])
 @commonfun
-def list_virus(auth, region):
-    virus = {
-        'service_type': 'WEB',
-        'tenant_id': '4969c491a3c74ee4af974e6d800c62de',
-        'name': 'web security',
-        'description': 'xxxxx',
-        'protocol': 'HTTP',
-        'upload': True,
-        'download': True,
-        'operation': 'ALARM',
-        'id': '2f245a7b-796b-4f26-9cf9-9e82d248fda7',
-    }
-
-    body = {'virus': [virus]}
-    return make_response(json.dumps(body), 200)
+def list_virus(auth, region, project_id):
+    virus = []
+    try:
+        conn = get_database_conn()
+        with conn.cursor() as cursor:
+            sql = 'select * from ' + TABLE_NAME_VIRUS + \
+                ' where tenant_id=\'' + project_id + '\''
+            result_num = cursor.execute(sql)
+            for result in cursor:
+                virus.append(result)
+    except Exception as e:
+        log.error(e)
+        response = {'code': 500, 'message': str(e)}
+        return make_response(json.dumps(response), 500)
+    else:
+        body = {'virus': virus}
+        return make_response(json.dumps(body), 200)
 
 
 @devicemod.route('/v1/virus/<virus_id>', methods=['GET'])
 @commonfun
-def get_virus(auth, region, virus_id):
-    virus = {
-        'service_type': 'WEB',
-        'tenant_id': '4969c491a3c74ee4af974e6d800c62de',
-        'name': 'web security',
-        'description': 'xxxxx',
-        'protocol': 'HTTP',
-        'upload': True,
-        'download': True,
-        'operation': 'ALARM',
-        'id': '2f245a7b-796b-4f26-9cf9-9e82d248fda7',
-    }
+def get_virus(auth, region, project_id, virus_id):
+    virus = {}
+    if not verify_id(virus_id):
+        message = 'Invalid virus id! Please check it.'
+        response = {'code': 400, 'message': message}
+        return make_response(json.dumps(response), 400)
 
-    body = {'virus': virus}
-    return make_response(json.dumps(body), 200)
+    try:
+        conn = get_database_conn()
+        with conn.cursor() as cursor:
+            sql = 'select * from ' + TABLE_NAME_VIRUS + \
+                ' where id=\'' + virus_id + '\''
+            result_num = cursor.execute(sql)
+            if result_num == 1:
+                virus = cursor.fetchone()
+            elif result_num == 0:
+                message = 'Unable to find virus with id ' + virus_id
+                log.debug(message)
+                response = {'code': 404, 'message': message}
+                return make_response(json.dumps(response), 404)
+            else:
+                message = 'Unknown error.'
+                log.error(message)
+                response = {'code': 500, 'message': message}
+                return make_response(json.dumps(response), 500)
+
+    except Exception as e:
+        log.error(e)
+        response = {'code': 500, 'message': str(e)}
+        return make_response(json.dumps(response), 500)
+    else:
+        body = {'virus': virus}
+        return make_response(json.dumps(body), 200)
 
 
 @devicemod.route('/v1/security/physical_devices', methods=['GET'])
 @commonfun
-def list_devices(auth, region):
-    device = {
-        'id': '9ad5a7e0-6dac-41b4-b20d-a7b8645fddf1',
-        'type': 'WAF',
-        'name': 'buildin',
-        'description': '',
-        'service_ip_list': ['10.0.0.11'],
-        'mgmt_ip': '172.10.0.11',
-    }
-
-    body = {'physical_devices': [device]}
-    return make_response(json.dumps(body), 200)
+def list_devices(auth, region, project_id):
+    physical_devices = []
+    try:
+        conn = get_database_conn()
+        with conn.cursor() as cursor:
+            sql = 'select * from ' + TABLE_NAME_PHYSICAL_DEVICES + \
+                ' where tenant_id=\'' + project_id + '\''
+            result_num = cursor.execute(sql)
+            for result in cursor:
+                physical_devices.append(result)
+    except Exception as e:
+        log.error(e)
+        response = {'code': 500, 'message': str(e)}
+        return make_response(json.dumps(response), 500)
+    else:
+        body = {'physical_devices': physical_devices}
+        return make_response(json.dumps(body), 200)
 
 
 @devicemod.route('/v1/security/physical_devices/<device_id>', methods=['GET'])
 @commonfun
-def get_devices(auth, region, device_id):
-    device = {
-        'id': '9ad5a7e0-6dac-41b4-b20d-a7b8645fddf1',
-        'type': 'WAF',
-        'name': 'buildin',
-        'description': '',
-        'service_ip_list': ['10.0.0.11'],
-        'mgmt_ip': '172.10.0.11',
-    }
+def get_devices(auth, region, project_id, device_id):
+    physical_devices = {}
+    if not verify_id(device_id):
+        message = 'Invalid device_id! Please check it.'
+        response = {'code': 400, 'message': message}
+        return make_response(json.dumps(response), 400)
 
-    body = {'physical_devices': device}
-    return make_response(json.dumps(body), 200)
+    try:
+        conn = get_database_conn()
+        with conn.cursor() as cursor:
+            sql = 'select * from ' + TABLE_NAME_PHYSICAL_DEVICES + \
+                ' where id=\'' + device_id + '\''
+            result_num = cursor.execute(sql)
+            if result_num == 1:
+                physical_devices = cursor.fetchone()
+            elif result_num == 0:
+                message = 'Unable to find physical device with id ' + device_id
+                log.debug(message)
+                response = {'code': 404, 'message': message}
+                return make_response(json.dumps(response), 404)
+            else:
+                message = 'Unknown error.'
+                log.error(message)
+                response = {'code': 500, 'message': message}
+                return make_response(json.dumps(response), 500)
+
+    except Exception as e:
+        log.error(e)
+        response = {'code': 500, 'message': str(e)}
+        return make_response(json.dumps(response), 500)
+    else:
+        body = {'physical_devices': physical_devices}
+        return make_response(json.dumps(body), 200)
+
+
+def verify_id(resource_id):
+    for char in resource_id:
+        if char <= 9 and char >= 0 or char == '-':
+            continue
+        elif char.lower() <= 'z' and char.lower() >= 'a':
+            continue
+        else:
+            break
+    else:
+        return True
+    return False
