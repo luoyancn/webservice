@@ -46,7 +46,7 @@ def thread_daemons():
 
 
 if __name__ == '__main__':
-    if config.enable_daemons:
+    if config.enable_daemons.lower() in TRUE_STRINGS:
         thread_daemons()
     kwargs = dict(host=config.bind_address, port=config.bind_port)
     if config.enable_ssl.lower() in TRUE_STRINGS:

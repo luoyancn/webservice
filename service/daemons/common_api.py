@@ -43,12 +43,13 @@ def get_servers_all_regions(image_id=None, all_tenants=True):
     except Exception as e:
         log.exception('Failed to get token from keystone: %s' % str(e))
         return []
-    
+
     kwargs = {'headers': {}, 'params': {}}
+    kwargs['timeout'] = 30
     if all_tenants:
         kwargs['params']['all_tenants'] = True
     if image_id:
-        kwargs['params']['image_id'] = image_id
+        kwargs['params']['image'] = image_id
     kwargs['headers']['X-Auth-Token'] = token
     kwargs['headers']['Content-Type'] = 'application/json'
     http = requests.Session()
@@ -70,6 +71,7 @@ def get_servers_all_regions(image_id=None, all_tenants=True):
             resp = http.request('GET', nova_url + \
                 '/servers/detail', **kwargs)
             for server in resp.json()['servers']:
+                server['region'] = region
                 servers.append(server)
         except Exception, e:
             log.error('Failed to get servers in region of %s' % region)
@@ -146,9 +148,8 @@ def get_address(server):
     ip_addr_float = ''
     ip_addr_fixed = ''
     interfaces = server['addresses']
-    for interface in interfaces:
-        ports = interface
-        for port in ports:
+    for net in interfaces.values():
+        for port in net:
             if port.get('OS-EXT-IPS:type') == 'floating':
                 ip_addr_float = port['addr']
                 break

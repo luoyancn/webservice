@@ -140,6 +140,11 @@ def commonfun(func):
         except KeyError:
             msg = 'userid, username, password and region must be provided'
             raise BadRequest(description=msg)
+
+        if config.disable_inner_high and region == 'inner_high':
+            response = {"message": "Note: inner_high is disabled!"}
+            return make_response(json.dumps(response), 200)
+
         try:
             user, project = _get_user_info(user_id)
         except AttributeError:
@@ -159,15 +164,11 @@ def commonfun(func):
             raise base_exc
 
         security_api = ['/wafs', '/ips', '/virus', '/vpn', '/fw']
-        security_api.appen('/physical_devices')
+        security_api.append('/physical_devices')
         for api in security_api:
             if api in frequest.path:
                 return func(auth, region, project, *args, **kwargs)
 
-        try:
-            return func(auth, region, project, *args, **kwargs)
-        except TypeError as e:
-            log.info(e)
         try:
             return func(auth, region, *args, **kwargs)
         except TypeError:
@@ -208,7 +209,7 @@ def create_project(auth, region):
     try:
         json_body = json.loads(frequest.data)
         if not json_body.get('project'):
-            msg = 'Bad request data in creating v3 project: %r' % frequest.data)
+            msg = 'Bad request data in creating v3 project: %r' % frequest.data
             log.error(msg)
             resp = {'code': 400, 'message': msg}
             return make_response(json.dumps(resp), 400)
@@ -231,7 +232,7 @@ def update_project(auth, region, project_id):
     try:
         json_body = json.loads(frequest.data)
         if not json_body.get('project'):
-            msg = 'Bad request data in update v3 project: %r' % frequest.data)
+            msg = 'Bad request data in update v3 project: %r' % frequest.data
             log.error(msg)
             resp = {'code': 400, 'message': msg}
             return make_response(json.dumps(resp), 400)
@@ -275,7 +276,7 @@ def create_user(auth, region):
     try:
         json_body = json.loads(frequest.data)
         if not json_body.get('user'):
-            msg = 'Bad request data in creating v3 user: %r' % frequest.data)
+            msg = 'Bad request data in creating v3 user: %r' % frequest.data
             log.error(msg)
             resp = {'code': 400, 'message': msg}
             return make_response(json.dumps(resp), 400)
@@ -316,7 +317,7 @@ def update_user(auth, region, user_id):
     try:
         json_body = json.loads(frequest.data)
         if not json_body.get('user'):
-            msg = 'Wrong request data in update v3 user: %r' % frequest.data)
+            msg = 'Wrong request data in update v3 user: %r' % frequest.data
             log.error(msg)
             resp = {'code': 400, 'message': msg}
             return make_response(json.dumps(resp), 400)

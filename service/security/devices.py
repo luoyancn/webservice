@@ -19,7 +19,7 @@ TABLE_NAME_PHYSICAL_DEVICES = 'physical_devices'
 def get_database_conn():
     conn = pymysql.connect(
         host=config.security_db_host,
-        port=config.security_db_port,
+        port=int(config.security_db_port),
         user=config.security_db_user,
         passwd=config.security_db_passwd,
         db=config.security_db,
@@ -48,15 +48,15 @@ def list_wafs(auth, region, project_id):
         body = {'wafs': wafs}
         return make_response(json.dumps(body), 200)
 
- 
+
 @devicemod.route('/v1/wafs/<wafs_id>', methods=['GET'])
 @commonfun
-def get_waf(auth, region, project_id, wafs_id): 
+def get_waf(auth, region, project_id, wafs_id):
     wafs = {}
     if not verify_id(wafs_id):
         message = 'Invalid wafs id! Please check it.'
-        response = {'code': 403, 'message': message}
-        return make_response(json.dumps(response), 403)
+        response = {'code': 400, 'message': message}
+        return make_response(json.dumps(response), 400)
 
     try:
         conn = get_database_conn()
@@ -70,17 +70,17 @@ def get_waf(auth, region, project_id, wafs_id):
                 message = 'Unable to find ips with id ' + wafs_id
                 log.debug(message)
                 response = {'code': 404, 'message': message}
-                return make_response(json.dumps(message), 200)
+                return make_response(json.dumps(response), 404)
             else:
                 message = 'Unknown error.'
                 log.error(message)
                 response = {'code': 500, 'message': message}
-                return make_response(json.dumps(message), 500)
+                return make_response(json.dumps(response), 500)
 
     except Exception as e:
         log.error(e)
-        error_message = str(e)
-        return make_response(json.dumps(body), 500)
+        response = {'code': 500, 'message': str(e)}
+        return make_response(json.dumps(response), 500)
     else:
         body = {'wafs': wafs}
         return make_response(json.dumps(body), 200)
@@ -113,8 +113,8 @@ def get_ips(auth, region, project_id, ips_id):
     ips = {}
     if not verify_id(ips_id):
         message = 'Invalid ips id! Please check it.'
-        response = {'code': 403, 'message': message}
-        return make_response(json.dumps(response), 403)
+        response = {'code': 400, 'message': message}
+        return make_response(json.dumps(response), 400)
 
     try:
         conn = get_database_conn()
@@ -128,12 +128,12 @@ def get_ips(auth, region, project_id, ips_id):
                 message = 'Unable to find ips with id ' + ips_id
                 log.debug(message)
                 response = {'code': 404, 'message': message}
-                return make_response(json.dumps(message), 200)
+                return make_response(json.dumps(response), 404)
             else:
                 message = 'Unknown error.'
                 log.error(message)
                 response = {'code': 500, 'message': message}
-                return make_response(json.dumps(message), 500)
+                return make_response(json.dumps(response), 500)
 
     except Exception as e:
         log.error(e)
@@ -171,8 +171,8 @@ def get_virus(auth, region, project_id, virus_id):
     virus = {}
     if not verify_id(virus_id):
         message = 'Invalid virus id! Please check it.'
-        response = {'code': 403, 'message': message}
-        return make_response(json.dumps(response), 403)
+        response = {'code': 400, 'message': message}
+        return make_response(json.dumps(response), 400)
 
     try:
         conn = get_database_conn()
@@ -186,12 +186,12 @@ def get_virus(auth, region, project_id, virus_id):
                 message = 'Unable to find virus with id ' + virus_id
                 log.debug(message)
                 response = {'code': 404, 'message': message}
-                return make_response(json.dumps(message), 200)
+                return make_response(json.dumps(response), 404)
             else:
                 message = 'Unknown error.'
                 log.error(message)
                 response = {'code': 500, 'message': message}
-                return make_response(json.dumps(message), 500)
+                return make_response(json.dumps(response), 500)
 
     except Exception as e:
         log.error(e)
@@ -206,7 +206,6 @@ def get_virus(auth, region, project_id, virus_id):
 @commonfun
 def list_devices(auth, region, project_id):
     physical_devices = []
- 
     try:
         conn = get_database_conn()
         with conn.cursor() as cursor:
@@ -230,8 +229,8 @@ def get_devices(auth, region, project_id, device_id):
     physical_devices = {}
     if not verify_id(device_id):
         message = 'Invalid device_id! Please check it.'
-        response = {'code': 403, 'message': message}
-        return make_response(json.dumps(response), 403)
+        response = {'code': 400, 'message': message}
+        return make_response(json.dumps(response), 400)
 
     try:
         conn = get_database_conn()
@@ -245,12 +244,12 @@ def get_devices(auth, region, project_id, device_id):
                 message = 'Unable to find physical device with id ' + device_id
                 log.debug(message)
                 response = {'code': 404, 'message': message}
-                return make_response(json.dumps(message), 200)
+                return make_response(json.dumps(response), 404)
             else:
                 message = 'Unknown error.'
                 log.error(message)
                 response = {'code': 500, 'message': message}
-                return make_response(json.dumps(message), 500)
+                return make_response(json.dumps(response), 500)
 
     except Exception as e:
         log.error(e)
