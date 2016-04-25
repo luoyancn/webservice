@@ -29,8 +29,7 @@ class daemon_wafs(threading.Thread):
                 self.fetch_data()
                 pass
             except Exception, e:
-                log.error('Something wrong in running wafs daemon')
-                log.exception(e)
+                log.error('Something wrong in running wafs daemon: %r' % e)
             time.sleep(self.interval)
 
     def stop(self):
@@ -68,7 +67,7 @@ class daemon_wafs(threading.Thread):
             try:
                 data_waf = self.get_waf(waf_server['id'], uri)
             except Exception, e:
-                log.error('Failed to fetch waf id of %s: %s' % (waf_id, str(e)))
+                log.error('Failed to fetch waf with id %s: %r' % (waf_id, e))
                 continue
             for key in data.keys():
                 if key not in data_waf.keys():
@@ -82,9 +81,9 @@ class daemon_wafs(threading.Thread):
                 sql = api.get_insert_sql(self.db_table_name, data)
             try:
                 cursor.execute(sql)
-                log.info('Wrote waf id of %s to database successfully' % waf_id)
+                log.info('Wrote waf of id %s to database successfully' % waf_id)
             except Exception as e:
-                log.error('Failed to write waf id of %s to db: %s' % (waf_id, str(e)))
+                log.error('Failed to write waf with id %s to db: %r' % (waf_id, e))
 
         cursor.close()
         conn.commit()

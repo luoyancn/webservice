@@ -19,6 +19,11 @@ privatekey_file = _config.get('DEFAULT', 'privatekey_file')
 certificate_file = _config.get('DEFAULT', 'certificate_file')
 debug = _config.get('DEFAULT', 'debug')
 
+if not _config.has_option('DEFAULT', 'disable_inner_high'):
+    disable_inner_high = False
+else:
+    disable_inner_high = _config.get('DEFAULT', 'disable_inner_high')
+
 #Notification DB
 notification_db_config = {}
 notification_db_config['db_host'] = _config.get(

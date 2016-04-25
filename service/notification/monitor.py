@@ -380,14 +380,14 @@ def get_warn_strategies_list(auth, region):
                 rule['field'] = result.get('field', '')
                 rule['comparison'] = result.get('comparison', '')
                 rule['threshold'] = result.get('threshold', '')
-		if result['strategy_id'] not in warn_id_dict.keys():
+                if result['strategy_id'] not in warn_id_dict.keys():
                     continue
                 warn_id_dict[result['strategy_id']]['rules'].append(rule)
 
             cursor.nextset()
             resultSet = cursor.fetchall()
             for result in resultSet:
-	        if result['strategy_id'] not in warn_id_dict.keys():
+                if result['strategy_id'] not in warn_id_dict.keys():
                     continue
                 warn_id_dict[result['strategy_id']]['servers'].append(
                     result['server_id'])

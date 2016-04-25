@@ -167,9 +167,9 @@ def vpn_res_list(auth, region, project_id, sub_res):
                     result['peer_cidrs'] = result['peer_cidrs'].split(',')
                 vpn_resources.append(result)
     except Exception as e:
-        message = 'Failed to get %s list: %r': % (sub_res, e)
+        message = 'Failed to get %s list: %r' % (sub_res, e)
         log.error(message)
-        response = {'code': 500, 'message': message)}
+        response = {'code': 500, 'message': message}
         return make_response(json.dumps(response), 500)
     else:
         body = {sub_resources[sub_res]: vpn_resources}
@@ -220,18 +220,18 @@ def vpn_res_get(auth, region, project, sub_res, resource_id):
                     ' with id ' + resource_id
                 log.debug(message)
                 response = {'code': 404, 'message': message}
-                return make_response(json.dumps(message), 200)
+                return make_response(json.dumps(response), 404)
             else:
                 message = 'Unknown error.'
                 log.error(message)
                 response = {'code': 500, 'message': message}
-                return make_response(json.dumps(message), 500)
+                return make_response(json.dumps(response), 500)
 
     except Exception as e:
         message = 'Failed to get %s by id %s: %r:' \
             % (sub_res, resource_id, e)
         log.error(message)
-        response = {'code': 500, 'message': message)}
+        response = {'code': 500, 'message': message}
         return make_response(json.dumps(response), 500)
     else:
         body = {sub_resources[sub_res]: vpn_resource}

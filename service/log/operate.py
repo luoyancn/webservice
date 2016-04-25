@@ -42,7 +42,7 @@ def get_logs(auth, region):
     except Exception as e:
         message = 'Failed to get logs : %r' % e
         log.error(message)
-        response = {'code': 500, 'message': message)}
+        response = {'code': 500, 'message': message}
         return make_response(json.dumps(response), 500)
     else:
         body = {'operation_logs': operation_logs}
