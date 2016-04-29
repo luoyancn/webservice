@@ -50,7 +50,6 @@ class daemon_fws(threading.Thread):
         for fw_server in fw_servers:
             if self.thread_stop:
                 return
-                hkk
             fw_id = fw_server['id']
             tenant_id = fw_server['tenant_id']
             tenant_name = tenants_id_name_dict.get(tenant_id, '')

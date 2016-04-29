@@ -50,7 +50,6 @@ class daemon_vpns(threading.Thread):
         for vpn_server in vpn_servers:
             if self.thread_stop:
                 return
-                hkk
             vpn_id = vpn_server['id']
             tenant_id = vpn_server['tenant_id']
             tenant_name = tenants_id_name_dict.get(tenant_id, '')
