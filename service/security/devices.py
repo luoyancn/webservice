@@ -97,6 +97,8 @@ def list_ips(auth, region, project_id):
                 ' where tenant_id=\'' + project_id + '\''
             result_num = cursor.execute(sql)
             for result in cursor:
+                protected_object = result['protected_object']
+                result['protected_object'] = protected_object.split(',')
                 ips.append(result)
     except Exception as e:
         log.error(e)
@@ -123,6 +125,9 @@ def get_ips(auth, region, project_id, ips_id):
                 ' where id=\'' + ips_id + '\''
             result_num = cursor.execute(sql)
             if result_num == 1:
+                protected_object = result['protected_object']
+                result['protected_object'] = protected_object.split(',')
+                ips.append(result)
                 ips = cursor.fetchone()
             elif result_num == 0:
                 message = 'Unable to find ips with id ' + ips_id
@@ -155,6 +160,14 @@ def list_virus(auth, region, project_id):
                 ' where tenant_id=\'' + project_id + '\''
             result_num = cursor.execute(sql)
             for result in cursor:
+                if result.get('upload') == 1:
+                    result['upload'] = True
+                else:
+                    result['upload'] = False
+                if result.get('download') == 1:
+                    result['download'] = True
+                else:
+                    result['download'] = True
                 virus.append(result)
     except Exception as e:
         log.error(e)
@@ -182,6 +195,14 @@ def get_virus(auth, region, project_id, virus_id):
             result_num = cursor.execute(sql)
             if result_num == 1:
                 virus = cursor.fetchone()
+                if virus.get('upload') == 1:
+                    virus['upload'] = True
+                else:
+                    virus['upload'] = False
+                if virus.get('download') == 1:
+                    virus['download'] = True
+                else:
+                    virus['download'] = True
             elif result_num == 0:
                 message = 'Unable to find virus with id ' + virus_id
                 log.debug(message)

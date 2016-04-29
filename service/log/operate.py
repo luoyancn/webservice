@@ -31,7 +31,7 @@ def get_logs(auth, region):
     try:
         conn = get_database_conn()
         with conn.cursor() as cursor:
-            sql = 'select * from ' + DB_TABLE_NAME_LOGS
+            sql = 'select * from %s where region=\'%s\'' % (DB_TABLE_NAME_LOGS, region)
             result_num = cursor.execute(sql)
             for result in cursor:
                 create_time = result.pop('created_time')

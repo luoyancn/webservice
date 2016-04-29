@@ -20,14 +20,14 @@ class daemon_vpns(threading.Thread):
         #timeout = (connect_timeout, read_timeout)
         self.timeout = (3, 8)
         self.image_id = config.vpn_image_id
-        self.VPN_SERVICE_API = '/api/vpns/'
+        self.vpn_server_port = config.daemon_server_port
+        self.VPN_SERVICE_API = '/api/vpn/ipsecservice/'
 
     #Overwrite run() method
     def run(self):
         while not self.thread_stop:
             try:
                 self.fetch_data()
-                pass
             except Exception, e:
                 log.error('Something wrong in running vpns daemon: %r' % e)
             time.sleep(self.interval)
@@ -53,7 +53,7 @@ class daemon_vpns(threading.Thread):
                 hkk
             vpn_id = vpn_server['id']
             tenant_id = vpn_server['tenant_id']
-            tenant_name = tenants_id_name_dict.get('tenant_id', '')
+            tenant_name = tenants_id_name_dict.get(tenant_id, '')
             ip_addr = api.get_address(vpn_server)
             data = {'id': vpn_id,
                     'name': vpn_server['name'],
@@ -62,9 +62,8 @@ class daemon_vpns(threading.Thread):
                     'user_id': 'a5982c0ae54a4b9693b2f0f3cc630edf',
                     'user_name': config.admin_user,
                     'ip_address': ip_addr,
-                    'region': server['region']}
-            vpns_port = config.vpns_server_port
-            uri = 'http://%s:%s' % (ip_addr, vpns_port)
+                    'region': server.get('region', '')}
+            uri = 'http://%s:%s' % (ip_addr, self.vpn_server_port)
 
             try:
                 data_vpn = self.get_vpn_service(vpn_server['id'], uri)
@@ -77,6 +76,10 @@ class daemon_vpns(threading.Thread):
                 data_vpn.pop(key)
             data.update(data_vpn)
 
+            ike_policies = get_ike_list(uri)
+            ipsec_policies = get_ipsec_list(uri)
+            vpn_site_conns = get_site_conns_by_vpn_service(uri, vpn_id)
+
             if vpn_id in current_vpns_ids:
                 sql = api.get_update_sql(self.db_table_name, data)
             else:
@@ -85,6 +88,7 @@ class daemon_vpns(threading.Thread):
                 cursor.execute(sql)
                 log.info('Wrote vpn of id %s to database successfully' % vpn_id)
             except Exception as e:
+                log.error('Something wrong when execute sql: %s' % sql)
                 log.error('Failed to write vpn with id %s to db: %r' % (vpn_id, e))
 
         cursor.close()
@@ -92,12 +96,24 @@ class daemon_vpns(threading.Thread):
         conn.close()
 
     def get_vpn_service(self, vpn_id, uri):
-        vpn_url = api.get_resource_url(ID=vpn_id, API=self.API)
+        vpn_url = get_resource_url(ID=vpn_id, API=self.VPN_SERVICE_API)
         vpn_url = uri + vpn_url
         kwargs = {'headers': {}}
         kwargs['timeout'] = self.timeout
         content_type = 'application/json;charset=utf-8'
         kwargs['headers']['Content-Type'] = content_type
         http = requests.Session()
-        resp = http.request('GET', vpn_url, **kwargs)
-        return resp.json()['vpns']
+        resp = http.request('GET', vpn_url, **kwargs).json()
+        if resp.get('result') == False:
+            raise Exception(resp.get('errmsg', 'unknown error'))
+        return resp['ipsecservice']
+
+
+def get_resource_url(ID, API):
+    USER = api.USER
+    PASSWORD = api.PASSWORD
+    date = str(int(time.time()))
+    sign_text = date + API + USER + api.md5(PASSWORD)
+    sign = api.md5(sign_text)
+    res_url = API + '?id=%sdate=%s&sign=%s:%s' % (ID, date, USER, sign)
+    return res_url
