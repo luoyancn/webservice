@@ -71,6 +71,7 @@ def get_servers_all_regions(image_id=None, all_tenants=True):
             resp = http.request('GET', nova_url + \
                 '/servers/detail', **kwargs)
             for server in resp.json()['servers']:
+                server['region'] = region
                 servers.append(server)
         except Exception, e:
             log.error('Failed to get servers in region of %s' % region)
